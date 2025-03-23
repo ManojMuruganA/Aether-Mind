@@ -7,15 +7,15 @@
 #include "DHT.h"
 
 #define DHTTYPE DHT22
-#define DHTPIN 14  // D5 pin = GPIO 14
-#define DS18B20 2  // D4 pin = GPIO 2
+#define DHTPIN 14
+#define DS18B20 2  
 #define REPORTING_PERIOD_MS 1000
 
 float temperature, humidity, BPM = 0, SpO2 = 0, bodytemperature;
 
-/* WiFi credentials */
-const char* ssid = "vivo T2 5G";  
-const char* password = "manoj123";  
+
+const char* ssid = "your_SSID";  
+const char* password = "your_Password";  
 
 DHT dht(DHTPIN, DHTTYPE);
 PulseOximeter pox;
@@ -38,7 +38,6 @@ void setup() {
   Serial.println("\nConnecting to WiFi...");
   WiFi.begin(ssid, password);
 
-  // Wait until connected
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.print(".");
@@ -46,7 +45,7 @@ void setup() {
   
   Serial.println("\nWiFi connected!");
   Serial.print("Local IP Address: ");
-  Serial.println(WiFi.localIP());  // Print the IP address
+  Serial.println(WiFi.localIP());
 
   server.on("/", handle_OnConnect);
   server.onNotFound(handle_NotFound);
