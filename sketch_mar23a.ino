@@ -16,7 +16,7 @@ unsigned long FirstPulseTime = 0;
 unsigned long SecondPulseTime = 0;
 unsigned long PulseInterval = 0;
 
-CircularBuffer<unsigned long, 10> buffer;  // Store the last 10 intervals for averaging
+CircularBuffer<unsigned long, 10> buffer;
 int data_index = 0;
 
 void setup() {
@@ -35,16 +35,13 @@ void loop() {
   if (currentTime - lastTime >= (1000 / SAMPLE_RATE)) {
     lastTime = currentTime;
 
-    // Read ECG signal
     float sensor_value = analogRead(INPUT_PIN);
-    float normalized_value = (sensor_value - 512.0) / 512.0;  // Normalize to ±1 range
+    float normalized_value = (sensor_value - 512.0) / 512.0; 
     float signal = ECGFilter(normalized_value);
 
-    // Peak detection
     peak = Getpeak(signal);
     digitalWrite(OUTPUT_PIN, peak);
 
-    // BPM calculation with accurate interval measurement
     if (peak && !IgnoreReading) {
       if (!FirstPulseDetected) {
         FirstPulseTime = millis();
@@ -53,8 +50,7 @@ void loop() {
         SecondPulseTime = millis();
         PulseInterval = SecondPulseTime - FirstPulseTime;
 
-        // ✅ Only add valid intervals to the buffer
-        if (PulseInterval >= 500 && PulseInterval <= 1500) {  // 40-120 BPM range
+        if (PulseInterval >= 500 && PulseInterval <= 1500) {  
           buffer.unshift(PulseInterval);
           FirstPulseTime = SecondPulseTime;
         }
@@ -66,8 +62,7 @@ void loop() {
       IgnoreReading = false;
     }
 
-    // Display BPM with moving average smoothing
-    if (buffer.size() >= 5) {  // Calculate BPM only with enough valid intervals
+    if (buffer.size() >= 5) {  
       unsigned long sumIntervals = 0;
       for (int i = 0; i < buffer.size(); i++) {
         sumIntervals += buffer[i];
@@ -78,7 +73,6 @@ void loop() {
       if (avgInterval > 0) {
         BPM = 60000.0 / avgInterval;
 
-        // ✅ Only display valid BPM (60-100 BPM)
         if (BPM >= 60.0 && BPM <= 100.0) {
           Serial.print("BPM: ");
           Serial.println(BPM, 2);  // Display with 2 decimal places
@@ -87,7 +81,7 @@ void loop() {
     }
   }
 
-  delay(10);  // Small delay to prevent serial overload
+  delay(10);
 }
 
 bool Getpeak(float new_sample) {
@@ -97,7 +91,6 @@ bool Getpeak(float new_sample) {
 
   data_buffer[data_index] = new_sample;
 
-  // Calculate mean and standard deviation
   float sum = 0.0, mean = 0.0, standard_deviation = 0.0;
   for (int i = 0; i < DATA_LENGTH; ++i) {
     sum += data_buffer[i];
@@ -111,7 +104,6 @@ bool Getpeak(float new_sample) {
   mean_buffer[data_index] = mean;
   standard_deviation_buffer[data_index] = sqrt(standard_deviation / DATA_LENGTH);
 
-  // ✅ Adaptive peak detection with stricter threshold
   peak = (new_sample > mean + 2.0 * standard_deviation);  
 
   data_index = (data_index + 1) % DATA_LENGTH;
@@ -122,7 +114,6 @@ bool Getpeak(float new_sample) {
 float ECGFilter(float input) {
   float output = input;
 
-  // ✅ First stage filter (Low-pass filter)
   {
     static float z1 = 0, z2 = 0;
     float x = output - 0.70682283 * z1 - 0.15621030 * z2;
@@ -131,7 +122,6 @@ float ECGFilter(float input) {
     z1 = x;
   }
 
-  // ✅ Second stage filter (High-pass filter)
   {
     static float z1 = 0, z2 = 0;
     float x = output - 0.95028224 * z1 - 0.54073140 * z2;
